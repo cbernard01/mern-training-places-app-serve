@@ -1,11 +1,18 @@
 class HttpResponse {
-  constructor(payload) {
-    this.error = "";
+  constructor(res, payload) {
+    this.response = res;
     this.payload = payload;
+    this.err = "";
+    this.code = 200;
   }
 
-  data() {
-    return {error: this.error, payload: this.payload}
+  error(code, error) {
+   this.code = code;
+   this.err = error;
+  }
+
+  send() {
+    this.response.status(this.code).json({status: 200, error: this.err, payload: this.payload});
   }
 }
 
