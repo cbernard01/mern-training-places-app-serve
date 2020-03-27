@@ -1,4 +1,5 @@
 const {v4: uuid} = require("uuid");
+const {validationResult} = require("express-validator");
 
 const User = require("../models/User");
 const HttpResponse = require("../models/http-response");
@@ -9,8 +10,8 @@ let USERS = [
 ];
 
 const getUsers = (req, res, next) => {
-  const users = USERS;
   const httpResponse = new HttpResponse(res);
+  const users = USERS;
 
   if (!users) return httpResponse.error(404, "No users found.");
 
@@ -18,31 +19,37 @@ const getUsers = (req, res, next) => {
 };
 
 const getUserById = (req, res, next) => {
-  const user = USERS.find(u => u.id === req.params.userId);
-
   const httpResponse = new HttpResponse(res);
+  const user = USERS.find(u => u.id === req.params.userId);
 
   if (!user) return httpResponse.error(404, "Could not find a user with the provided user id.");
   return httpResponse.send({user: user.toJson()});
 };
 
 const signUpUser = (req, res, next) => {
+  const httpResponse = new HttpResponse(res);
+  const errors = validationResult(req);
   const {name, password, email} = req.body;
+
+  if(!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+
   const newUser = new User(uuid(), name, email, password, "", 0);
   const user = USERS.find(u=> u.email === email);
 
-  const httpResponse = new HttpResponse(res);
-
   if(user) return httpResponse.error(404,"User with the same email already exists");
+  else USERS.push(newUser);
 
-  USERS.push(newUser);
   return httpResponse.send({user: newUser.toJson()},202);
 };
 
 const logInUser = (req, res, next)=> {
-  const {email, password} = req.body;
-  const user = USERS.find(u => u.email === email);
   const httpResponse = new HttpResponse(res);
+  const errors = validationResult(req);
+  const {email, password} = req.body;
+
+  if(!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+
+  const user = USERS.find(u => u.email === email);
 
   if (!user || user.password !== password) return httpResponse.error(401, "Could not identify user, invalid credentials.", 402);
   return httpResponse.send({user: user.toJson()}, 202);
