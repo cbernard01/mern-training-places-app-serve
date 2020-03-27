@@ -33,48 +33,48 @@ let PLACES = [
 
 const getPlaceById = (req, res, next) => {
   const place = PLACES.find(p => p.id === req.params.placeId);
-  const httpResponse = new HttpResponse(res, {place: place});
+  const httpResponse = new HttpResponse(res);
 
-  if (!place) httpResponse.error(404, "Could not find a place with the provided place id.");
-  return httpResponse.send();
+  if (!place) return httpResponse.error(404, "Could not find a place with the provided place id.");
+  return httpResponse.send({place: place});
 };
 
 const getPlacesByUserId = (req, res, next) => {
   const places = PLACES.filter(p => p.creator === req.params.userId);
-  const httpResponse = new HttpResponse(res, {places: places});
+  const httpResponse = new HttpResponse(res);
 
-  if (places.length === 0) httpResponse.error(404, "Could not find places with the provided user id.");
-  return httpResponse.send();
+  if (places.length === 0) return httpResponse.error(404, "Could not find places with the provided user id.");
+  return httpResponse.send({places: places});
 };
 
 const createPlace = (req, res, next) => {
   const {title, description, location, address, creator} = req.body;
   const createdPlace = {id: uuid(),title: title, description: description, location: location, address: address, creator: creator, imageURL: ""};
-  const httpResponse = new HttpResponse(res, {place: createdPlace});
+  const httpResponse = new HttpResponse(res);
 
   PLACES.push(createdPlace);
-  return httpResponse.send();
+  return httpResponse.send({place: createdPlace});
 };
 
 const updatePlaceById = (req, res, next) => {
   const updatePlace = req.body;
   const placeIndex = PLACES.findIndex(p => p.id === req.params.placeId);
-  const httpResponse = new HttpResponse(res, {place: updatePlace});
+  const httpResponse = new HttpResponse(res);
 
-  if (placeIndex < 0) httpResponse.error(404, "Could not find place with the provided id.");
+  if (placeIndex < 0) return httpResponse.error(404, "Could not find place with the provided id.");
   else PLACES[placeIndex] = updatePlace;
 
-  return httpResponse.send();
+  return httpResponse.send({place: updatePlace});
 };
 
 const deletePlaceById = (req, res, next)=> {
   const places = PLACES.filter(p => p.id !== req.params.placeId);
-  const httpResponse = new HttpResponse(res, {});
+  const httpResponse = new HttpResponse(res);
 
-  if (places.length === PLACES.length) httpResponse.error(404, "Could not delete place with the provided id.");
+  if (places.length === PLACES.length) return httpResponse.error(404, "Could not delete place with the provided id.");
   else PLACES = places;
 
-  return httpResponse.send();
+  return httpResponse.send({});
 };
 
 exports.getPlaceById = getPlaceById;
