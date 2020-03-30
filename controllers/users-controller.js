@@ -8,13 +8,13 @@ const getUsers = async (req, res) => {
 
   let users;
   try {
-    users = await User.find();
+    users = await User.find({}, "-password");
   } catch(err) {
     return httpResponse.error(500, "Fetching users failed, please try again later", 500);
   }
 
   if (!users) return httpResponse.error(404, "No users found.");
-  else return httpResponse.send({users: users});
+  else return httpResponse.send({users: users.map(user => user.toObject({getters: true}))});
 };
 
 const getUserById = async (req, res) => {
@@ -37,31 +37,31 @@ const getUserById = async (req, res) => {
 const signUpUser = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
-  const {name, email, password, image, places} = req.body;
+  const {name, email, password, image} = req.body;
 
   if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
 
-  let user;
+  let existingUser;
   try {
-    user = await User.findOne({email: email});
+    existingUser = await User.findOne({email: email});
   } catch(err) {
     return httpResponse.error(500, "Fetching user failed, please try again later", 500);
   }
 
   let newUser;
-  if (user) return httpResponse.error(404, "User with the same email already exists");
-  else newUser = new User({name, email, password, image, places});
+  if (existingUser) return httpResponse.error(404, "Could not create user, email already exists");
+  else newUser = new User({name, email, password, image, places: []});
 
-  let result;
+  let createdUser;
   try {
-    result = await newUser.save();
+    createdUser = await newUser.save();
   } catch(err) {
     return httpResponse.error(500, "Saving user failed, please try again later", 500);
   }
 
-  result.password = "";
+  createdUser.password = "";
 
-  return httpResponse.send({user: result.toObject({getters: true})}, 202);
+  return httpResponse.send({user: createdUser.toObject({getters: true})}, 202);
 };
 
 const logInUser = async (req, res) => {

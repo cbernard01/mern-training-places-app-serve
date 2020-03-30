@@ -1,6 +1,8 @@
 const {validationResult} = require("express-validator");
+const mongoose = require("mongoose");
 
 const Place = require("../models/Place");
+const User = require("../models/User");
 const HttpResponse = require("../models/http-response");
 const getLocationFromAddress = require("../util/location");
 
@@ -52,14 +54,28 @@ const createPlace = async (req, res) => {
     imageURL: imageURL
   });
 
-  let result;
+  let user;
   try {
-    result = await createdPlace.save();
+    user = await User.findById(creator);
   } catch (err) {
     return httpResponse.error(500, "Could not create place, please try again later", 500);
   }
 
-  return httpResponse.send({place: result.toObject({getters: true})});
+  if (!user) return httpResponse.error(404, "Could not find the user for provided id", 400);
+
+  let result;
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await createdPlace.save({session: sess});
+    user.places.push(createdPlace);
+    await user.save({session: sess});
+    await sess.commitTransaction();
+  } catch (err) {
+    return httpResponse.error(500, "Could not create place, please try again later", 500);
+  }
+
+  return httpResponse.send({place: createdPlace.toObject({getters: true})});
 };
 
 const updatePlaceById = async (req, res) => {
@@ -102,18 +118,25 @@ const deletePlaceById = async (req, res) => {
 
   let place;
   try {
-    place = await Place.findById(req.params.placeId);
+    place = await Place.findById(req.params.placeId).populate("creator");
   } catch (err) {
     return httpResponse.error(500, "Fetching place by Id failed, please try again later", 500);
   }
 
+  if(!place) return httpResponse.error(404, "Could not find place with provided id", 400);
+
   try {
-    await place.remove();
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await place.remove({session: sess});
+    place.creator.places.pull(place);
+    await place.creator.save({session: sess});
+    await sess.commitTransaction();
   } catch (err) {
     return httpResponse.error(500, "Could not delete place, please try again later", 500);
   }
 
-  return httpResponse.send({});
+  return httpResponse.send({}, 204);
 };
 
 exports.getPlaceById = getPlaceById;
