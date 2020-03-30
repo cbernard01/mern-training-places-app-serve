@@ -1,58 +1,88 @@
-const {v4: uuid} = require("uuid");
 const {validationResult} = require("express-validator");
 
 const User = require("../models/User");
 const HttpResponse = require("../models/http-response");
 
-let USERS = [
-  new User("u1", "Clifford Bernard", "cliffordbernard@hotmail.com", "12345", "https://ak6.picdn.net/shutterstock/videos/9925526/thumb/1.jpg", 4),
-  new User("u2", "Megan Bernard", "meganjbernard@hotmail.com", "12345", "https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500", 2)
-];
-
-const getUsers = (req, res, next) => {
+const getUsers = async (req, res) => {
   const httpResponse = new HttpResponse(res);
-  const users = USERS;
+
+  let users;
+  try {
+    users = await User.find();
+  } catch(err) {
+    return httpResponse.error(500, "Fetching users failed, please try again later", 500);
+  }
 
   if (!users) return httpResponse.error(404, "No users found.");
-
-  return httpResponse.send({users: USERS});
+  else return httpResponse.send({users: users});
 };
 
-const getUserById = (req, res, next) => {
+const getUserById = async (req, res) => {
   const httpResponse = new HttpResponse(res);
-  const user = USERS.find(u => u.id === req.params.userId);
+
+  let user;
+  try {
+    user = await User.findById(req.params.userId);
+  } catch(err) {
+    return httpResponse.error(500, "Fetching user failed, please try again later", 500);
+  }
 
   if (!user) return httpResponse.error(404, "Could not find a user with the provided user id.");
-  return httpResponse.send({user: user.toJson()});
+
+  user.password = "";
+
+  return httpResponse.send({user: user.toObject({getters: true})});
 };
 
-const signUpUser = (req, res, next) => {
+const signUpUser = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
-  const {name, password, email} = req.body;
+  const {name, email, password, image, places} = req.body;
 
-  if(!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+  if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
 
-  const newUser = new User(uuid(), name, email, password, "", 0);
-  const user = USERS.find(u=> u.email === email);
+  let user;
+  try {
+    user = await User.findOne({email: email});
+  } catch(err) {
+    return httpResponse.error(500, "Fetching user failed, please try again later", 500);
+  }
 
-  if(user) return httpResponse.error(404,"User with the same email already exists");
-  else USERS.push(newUser);
+  let newUser;
+  if (user) return httpResponse.error(404, "User with the same email already exists");
+  else newUser = new User({name, email, password, image, places});
 
-  return httpResponse.send({user: newUser.toJson()},202);
+  let result;
+  try {
+    result = await newUser.save();
+  } catch(err) {
+    return httpResponse.error(500, "Saving user failed, please try again later", 500);
+  }
+
+  result.password = "";
+
+  return httpResponse.send({user: result.toObject({getters: true})}, 202);
 };
 
-const logInUser = (req, res, next)=> {
+const logInUser = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
   const {email, password} = req.body;
 
-  if(!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+  if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
 
-  const user = USERS.find(u => u.email === email);
+  let user;
+  try {
+    user = await User.findOne({email: email});
+  } catch (err) {
+    return httpResponse.error(500, "Fetching user failed, please try again later", 500);
+  }
 
   if (!user || user.password !== password) return httpResponse.error(401, "Could not identify user, invalid credentials.", 402);
-  return httpResponse.send({user: user.toJson()}, 202);
+
+  user.password = "";
+
+  return httpResponse.send({user: user.toObject({getters: true})}, 202);
 };
 
 exports.getUsers = getUsers;
