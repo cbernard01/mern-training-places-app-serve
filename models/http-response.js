@@ -9,11 +9,11 @@ class HttpResponse {
   error(code, errors, internalStatus=400) {
     if (!Array.isArray(errors)) errors = [errors];
 
-    this.response.status(code).json({status: internalStatus, errors: errors, payload: this.payload});
+    return this.response.status(code).json({status: internalStatus, errors: errors, payload: this.payload});
   }
 
   send(payload, internalStatus=200) {
-    this.response.status(this.code).json({status: internalStatus, errors: this.err, payload: payload});
+    return this.response.status(this.code).json({status: internalStatus, errors: this.err, payload: payload});
   }
 }
 

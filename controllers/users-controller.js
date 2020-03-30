@@ -39,7 +39,12 @@ const signUpUser = async (req, res) => {
   const errors = validationResult(req);
   const {name, email, password, image} = req.body;
 
-  if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+  if (!errors.isEmpty()) {
+    let errorResult = [];
+
+    await errors.errors.map(error => errorResult.push(`${error.param} has an ${error.msg}, please try again`));
+    return httpResponse.error(422, errorResult, 401);
+  }
 
   let existingUser;
   try {
