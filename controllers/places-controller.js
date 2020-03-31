@@ -30,7 +30,7 @@ const getPlacesByUserId = async (req, res) => {
     return httpResponse.error(500, "Fetching places failed, please try again later", 500);
   }
 
-  if (!places || places.length === 0) return httpResponse.error(404, "Could not find places with the provided user id.");
+  if (!places || places.length === 0) return httpResponse.send({places:[]});
   return httpResponse.send({places: places.map(p => p.toObject({getters: true}))});
 };
 
@@ -38,7 +38,7 @@ const createPlace = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
 
-  if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+  if (!errors.isEmpty()) return httpResponse.validationError(422, errors, 401);
 
   const {title, description, address, creator, imageURL} = req.body;
 
@@ -51,7 +51,7 @@ const createPlace = async (req, res) => {
     location: location,
     address: address,
     creator: creator,
-    imageURL: imageURL
+    imageURL: imageURL || ""
   });
 
   let user;
@@ -63,7 +63,6 @@ const createPlace = async (req, res) => {
 
   if (!user) return httpResponse.error(404, "Could not find the user for provided id", 400);
 
-  let result;
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -83,7 +82,7 @@ const updatePlaceById = async (req, res) => {
   const updatePlace = req.body;
   const errors = validationResult(req);
 
-  if (!errors.isEmpty()) return httpResponse.error(422, errors.errors, 401);
+  if (!errors.isEmpty()) return httpResponse.validationError(422, errors, 401);
 
   let place;
   try {
