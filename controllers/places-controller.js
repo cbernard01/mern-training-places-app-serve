@@ -6,6 +6,13 @@ const User = require("../models/User");
 const HttpResponse = require("../models/http-response");
 const getLocationFromAddress = require("../util/location");
 
+const unlinkFile = (req) => {
+  if (req.file) fs.unlink(req.file.path, err => {
+    if (err) console.log(err);
+  });
+};
+
+
 const getPlaceById = async (req, res) => {
   const httpResponse = new HttpResponse(res);
 
@@ -38,12 +45,18 @@ const createPlace = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
 
-  if (!errors.isEmpty()) return httpResponse.validationError(422, errors, 401);
+  if (!errors.isEmpty()) {
+    unlinkFile(req);
+    return httpResponse.validationError(422, errors, 401);
+  }
 
-  const {title, description, address, creator, imageURL} = req.body;
+  const {title, description, address, creator} = req.body;
 
   const location = await getLocationFromAddress(address);
-  if (location.errors) return httpResponse.error(422, location.errors, 401);
+  if (location.errors) {
+    unlinkFile(req);
+    return httpResponse.error(422, location.errors, 401);
+  }
 
   const createdPlace = new Place({
     title: title,
@@ -51,17 +64,21 @@ const createPlace = async (req, res) => {
     location: location,
     address: address,
     creator: creator,
-    imageURL: imageURL || ""
+    imageURL: req.file.path
   });
 
   let user;
   try {
     user = await User.findById(creator);
   } catch (err) {
+    unlinkFile(req);
     return httpResponse.error(500, "Could not create place, please try again later", 500);
   }
 
-  if (!user) return httpResponse.error(404, "Could not find the user for provided id", 400);
+  if (!user) {
+    unlinkFile(req);
+    return httpResponse.error(404, "Could not find the user for provided id", 400);
+  }
 
   try {
     const sess = await mongoose.startSession();
@@ -71,6 +88,7 @@ const createPlace = async (req, res) => {
     await user.save({session: sess});
     await sess.commitTransaction();
   } catch (err) {
+    unlinkFile(req);
     return httpResponse.error(500, "Could not create place, please try again later", 500);
   }
 
