@@ -13,6 +13,8 @@ log.txt
 *.tfstate.backup
 .vscode/
 npm-debug.log*
+uploads/
+
 
 .idea/
 .ionic/

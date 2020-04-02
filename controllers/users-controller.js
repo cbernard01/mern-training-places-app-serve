@@ -1,7 +1,14 @@
 const {validationResult} = require("express-validator");
+const fs = require("fs");
 
 const User = require("../models/User");
 const HttpResponse = require("../models/http-response");
+
+const unlinkFile = (req) => {
+  if (req.file) fs.unlink(req.file.path, err => {
+    if (err) console.log(err);
+  });
+};
 
 const getUsers = async (req, res) => {
   const httpResponse = new HttpResponse(res);
@@ -9,7 +16,7 @@ const getUsers = async (req, res) => {
   let users;
   try {
     users = await User.find({}, "-password");
-  } catch(err) {
+  } catch (err) {
     return httpResponse.error(500, "Fetching users failed, please try again later", 500);
   }
 
@@ -23,7 +30,7 @@ const getUserById = async (req, res) => {
   let user;
   try {
     user = await User.findById(req.params.userId);
-  } catch(err) {
+  } catch (err) {
     return httpResponse.error(500, "Fetching user failed, please try again later", 500);
   }
 
@@ -37,25 +44,34 @@ const getUserById = async (req, res) => {
 const signUpUser = async (req, res) => {
   const httpResponse = new HttpResponse(res);
   const errors = validationResult(req);
-  const {name, email, password, image} = req.body;
+  const {name, email, password} = req.body;
 
-  if (!errors.isEmpty()) return httpResponse.validationError(422, errors, 401);
+  if (!errors.isEmpty()) {
+    unlinkFile(req);
+    return httpResponse.validationError(422, errors, 401);
+  }
 
   let existingUser;
   try {
     existingUser = await User.findOne({email: email});
-  } catch(err) {
+  } catch (err) {
+    unlinkFile(req);
     return httpResponse.error(500, "Fetching user failed, please try again later", 500);
   }
 
   let newUser;
-  if (existingUser) return httpResponse.error(404, "Could not create user, email already exists");
-  else newUser = new User({name, email, password, image, places: []});
+  if (existingUser) {
+    unlinkFile(req);
+    return httpResponse.error(404, "Could not create user, email already exists");
+  } else newUser = new User({
+    name: name, email: email, password: password, image: req.file.path, places: []
+  });
 
   let createdUser;
   try {
     createdUser = await newUser.save();
-  } catch(err) {
+  } catch (err) {
+    unlinkFile(req);
     return httpResponse.error(500, "Saving user failed, please try again later", 500);
   }
 
