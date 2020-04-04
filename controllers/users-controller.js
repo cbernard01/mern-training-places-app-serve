@@ -28,7 +28,7 @@ const passwordValidation = async (challengePassword, password, httpResponse) => 
     isValidPassword = await bcrypt.compare(challengePassword, password);
     return isValidPassword;
   } catch (errs) {
-    return httpResponse.error(500, "Could validate user, please try again.");
+    return httpResponse.error(403, "Could validate user, please try again.");
   }
 };
 
@@ -138,7 +138,7 @@ const logInUser = async (req, res) => {
 
   const isValidPassword = await passwordValidation(password, user.password, httpResponse);
 
-  if (!user || !isValidPassword) return httpResponse.error(401, "Could not identify user, invalid credentials.", 402);
+  if (!user || !isValidPassword) return httpResponse.error(403, "Could not identify user, invalid credentials.", 403);
 
   const token = createToken(user, httpResponse);
 
