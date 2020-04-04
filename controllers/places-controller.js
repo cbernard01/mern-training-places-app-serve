@@ -112,6 +112,8 @@ const updatePlaceById = async (req, res) => {
     return httpResponse.error(500, "Fetching place by Id failed, please try again later", 500);
   }
 
+  if (place.creator.toString() !== req.userData.userId) return httpResponse.error(401, "You are not allowed to edit this place.", 401);
+
   if (updatePlace.title && place.title !== updatePlace.title) place.title = updatePlace.title;
   if (updatePlace.description && place.description !== updatePlace.description) place.description = updatePlace.description;
   if (updatePlace.imageURL && place.imageURL !== updatePlace.imageURL) place.imageURL = updatePlace.imageURL;
@@ -142,6 +144,8 @@ const deletePlaceById = async (req, res) => {
   } catch (err) {
     return httpResponse.error(500, "Fetching place by Id failed, please try again later", 500);
   }
+
+  if (place.creator.toString() !== req.userData.userId) return httpResponse.error(401, "You are not allowed to edit this place.", 401);
 
   if(!place) return httpResponse.error(404, "Could not find place with provided id", 400);
 
