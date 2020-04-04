@@ -59,6 +59,8 @@ const createPlace = async (req, res) => {
     return httpResponse.error(422, location.errors, 401);
   }
 
+  if (!req.file) return httpResponse.error(500, "Could not find file, please provide an image file.", 500);
+
   const createdPlace = new Place({
     title: title,
     description: description,
