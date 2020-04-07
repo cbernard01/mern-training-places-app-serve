@@ -37,7 +37,7 @@ const getPlacesByUserId = async (req, res) => {
     return httpResponse.error(500, "Fetching places failed, please try again later", 500);
   }
 
-  if (!places || places.length === 0) return httpResponse.send({places:[]});
+  if (!places || places.length === 0) return httpResponse.send({places: []});
   return httpResponse.send({places: places.map(p => p.toObject({getters: true}))});
 };
 
@@ -111,7 +111,7 @@ const updatePlaceById = async (req, res) => {
     return httpResponse.error(500, "Fetching place by Id failed, please try again later", 500);
   }
 
-  if (place.creator.toString() !== req.userData.userId) return httpResponse.error(403, "You are not allowed to edit this place.", 403);
+  if (place.creator.id !== req.userData.userId) return httpResponse.error(403, "You are not allowed to edit this place.", 403);
 
   if (updatePlace.title && place.title !== updatePlace.title) place.title = updatePlace.title;
   if (updatePlace.description && place.description !== updatePlace.description) place.description = updatePlace.description;
@@ -144,9 +144,9 @@ const deletePlaceById = async (req, res) => {
     return httpResponse.error(500, "Fetching place by Id failed, please try again later", 500);
   }
 
-  if (place.creator.toString() !== req.userData.userId) return httpResponse.error(403, "You are not allowed to edit this place.", 403);
+  if (place.creator.id !== req.userData.userId) return httpResponse.error(403, "You are not allowed to edit this place.", 403);
 
-  if(!place) return httpResponse.error(404, "Could not find place with provided id", 400);
+  if (!place) return httpResponse.error(404, "Could not find place with provided id", 400);
 
   const imagePath = place.imageURL;
 
@@ -161,7 +161,9 @@ const deletePlaceById = async (req, res) => {
     return httpResponse.error(500, "Could not delete place, please try again later", 500);
   }
 
-  fs.unlink(imagePath, err => console.log(err));
+  fs.unlink(imagePath, err => {
+    if (err) console.log(err);
+  });
 
   return httpResponse.send({}, 204);
 };

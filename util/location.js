@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const API_KEY = "AIzaSyBrRBAmJH8RnUyCC_D3HM2lX79UU4dtkdE";
+const API_KEY = process.env.GOOGLE_API_KEY;
 const URL = "";
 
 

@@ -24,12 +24,12 @@ app.use("/api/places", placesRoutes);
 app.use("/api/users", usersRoutes);
 app.use(defaultRoutes);
 
-mongoose.connect("mongodb+srv://admin:BEZoNEvzfnhyJxYq@cluster0-6jl11.gcp.mongodb.net/mern-places?retryWrites=true&w=majority", {
+mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0-6jl11.gcp.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
   .then(() => {
-    app.listen(5000, () => {
+    app.listen(5001, () => {
       console.log("App started; server is listening on port 5000");
     });
   })

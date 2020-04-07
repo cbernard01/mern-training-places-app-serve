@@ -1,0 +1,9 @@
+{
+  "env": {
+    "DB_USER": "admin",
+    "DB_PASSWORD": "BEZoNEvzfnhyJxYq",
+    "DB_NAME": "mern-places",
+    "GOOGLE_API_KEY": "AIzaSyBrRBAmJH8RnUyCC_D3HM2lX79UU4dtkdE",
+    "JWT_KEY": "super_secret_dont_share"
+  }
+}

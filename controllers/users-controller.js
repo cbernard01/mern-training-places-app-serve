@@ -37,7 +37,7 @@ const createToken = (createdUser, httpResponse) => {
   try {
     token = jwt.sign(
       {userId: createdUser.id, email: createdUser.email},
-      "super_secret_dont_share",
+      process.env.JWT_KEY,
       {expiresIn: "1h"});
   } catch (errs) {
     return httpResponse.error(500, "Could validate user, please try again.");
