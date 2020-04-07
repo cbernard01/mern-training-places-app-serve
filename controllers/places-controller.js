@@ -13,7 +13,6 @@ const unlinkFile = (req) => {
   });
 };
 
-
 const getPlaceById = async (req, res) => {
   const httpResponse = new HttpResponse(res);
 
@@ -51,7 +50,7 @@ const createPlace = async (req, res) => {
     return httpResponse.validationError(422, errors, 401);
   }
 
-  const {title, description, address, creator} = req.body;
+  const {title, description, address} = req.body;
 
   const location = await getLocationFromAddress(address);
   if (location.errors) {
@@ -66,13 +65,13 @@ const createPlace = async (req, res) => {
     description: description,
     location: location,
     address: address,
-    creator: creator,
+    creator: req.userData.userId,
     imageURL: req.file.path
   });
 
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
   } catch (err) {
     unlinkFile(req);
     return httpResponse.error(500, "Could not create place, please try again later", 500);
